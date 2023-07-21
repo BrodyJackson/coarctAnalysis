@@ -1,6 +1,7 @@
 from tableone import TableOne
 
 categoricalValues = [
+    # 'sex',
     'diabetes',
     'smoking_status',
     'family_premature_cad_hist',
@@ -30,16 +31,14 @@ categoricalValues = [
     'aortic_dissection_post_angio',
     'arrhythmia_requiring_cardioversion',
     'need_for_blood_transfusion',
-    'need_for_surgical_vascular_site_repair',
-    'cardiovascular_event'
+    'need_for_surgical_vascular_site_repair'
 ]
 
 numericColumns = [
     'age',
     'height',
     'weight',
-    'bmi',
-    'sex', 
+    'bmi', 
     'diabetes_latest_a1c',
     'diabetes',
     'smoking_status',
@@ -70,8 +69,7 @@ numericColumns = [
     'aortic_dissection_post_angio',
     'arrhythmia_requiring_cardioversion',
     'need_for_blood_transfusion',
-    'need_for_surgical_vascular_site_repair',
-    'cardiovascular_event'   
+    'need_for_surgical_vascular_site_repair'  
 ]
 def createTableOne(df):
     groupby = ['cardiovascular_event']

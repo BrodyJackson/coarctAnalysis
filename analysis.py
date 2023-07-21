@@ -4,6 +4,9 @@ from datetime import datetime, date
 
 from dataGlossary import renameColumns
 from dataGlossary import cardiovascularEvents as cardioEvent
+from dataGlossary import categoricalChoices
+from dataGlossary import tableColumns
+from dataGlossary import tableLevels
 from descriptiveStats import createTableOne
 
 data = 'coarctData.csv'
@@ -36,5 +39,27 @@ df['age'] = df['patient_birth_date'].apply(determineAge)
 
 # Create descriptive statistics table
 summaryTable = createTableOne(df)
-print(summaryTable.tabulate(tablefmt="github"))
+summaryTableDf = summaryTable.tableone
+
+def createProperLabels(table):
+    tuplesList = []
+    for label in table.index:
+        string = label[0].split(',')[0]
+        newLabel = categoricalChoices[string][int(label[1])] if string in categoricalChoices else label[1]
+        tuplesList.append((label[0], newLabel))
+    # print(tuplesList) 
+    return tuplesList
+print(summaryTableDf.columns.names)
+summaryTableDf.index = pd.MultiIndex.from_tuples(createProperLabels(summaryTableDf), names=summaryTableDf.index.names)
+
+
+summaryTableDf.columns = pd.MultiIndex.from_tuples(tableColumns, names=summaryTableDf.columns.names)
+
+
+
+print(summaryTableDf.columns.levels)
+print(summaryTableDf.to_string())
+fileName = 'summaryTable.html'
+summaryTableDf.to_html(fileName)
+print(summaryTable.tabulate(tablefmt="html"))
 
