@@ -1,3 +1,55 @@
+demographicFeatures = {
+    'age',
+    'sex',
+    'height',
+    'weight',
+    'bmi'
+}
+
+vascularRisk = {
+    'hypertension',
+    'dyslipidemia',
+    'smoking_status',
+    'diabetes',
+    'family_premature_cad_hist',
+}
+
+currentClinicalFeatures = {
+    'claudication_pain',
+    'aortopathies',
+    'aortic_valve_morphology',
+    'indication_for_repair',
+    'valve_current_condition',
+    'valve_current_type',
+    'aortic_aneurysm',
+    'aortic_aneurysm_repaired',
+    'current_coarctation_present',
+    'coarctation_type',
+    'previous_coarctation_intervention',
+    'number_of_transcatheter_interventions',
+    'number_of_open_surgical_interventions',
+    'coarctation_less_three_mm',
+    'interrupted_aortic_arch',
+    'presence_of_collaterals',
+    'ecg_sinus_rhythm',
+    'ecg_afib',
+    'cardiopulmonary_exercise_test_performed', 
+}
+
+currentMedications = {
+    'beta_blockers',
+    'calcium_channel_blockers',
+    'ace_inhibitors_arbs',
+    'asa',
+    'statins',
+    'diuretics',
+    'total_num_antihypertensives '
+}
+
+surgicalHistory = {
+
+}
+
 #Hidden events in the main form (which may be null) such as pseudoaneurysm, all dates, and tranfusion numbers are not in this list
 cardiovascularEvents = {
     'presence_of_aneurysm_location',
@@ -24,6 +76,45 @@ cardiovascularEvents = {
     'arrhythmia_requiring_cardioversion',
     'need_for_blood_transfusion',
     'need_for_surgical_vascular_site_repair'
+}
+
+surgeryOperations = {
+    'unknown_operation_first',
+    'resection_end_to_end_anastamosis_index',
+    'patch_angioplasty_date_index',
+    'subclavian_flap_angioplasty_index',
+    'interposition_graft_index',
+    'unknown_operation_second',
+    'resection_end_to_end_anastamosis_second',
+    'patch_angioplasty_date_second',
+    'subclavian_flap_angioplasty_second',
+    'interposition_graft_second',
+    'unknown_operation_third',
+    'resection_end_to_end_anastamosis_third',
+    'patch_angioplasty_date_third',
+    'subclavian_flap_angioplasty_third',
+    'interposition_graft_third'
+}
+
+cathOperations = {
+    'unknown_cath_operation_first',
+    'index_balloon_angioplasty_date',
+    'index_angioplasty_with_covered_stent_date',
+    'index_angioplasty_with_bare_metal_date',
+    'index_thoracic_endovascular_aneurysm_repair_date',
+    'index_hybrid_procedures_date',
+    'unknown_cath_operation_second',
+    'second_balloon_angioplasty_date',
+    'second_angioplasty_with_covered_stent_date',
+    'second_angioplasty_with_bare_metal_date',
+    'second_thoracic_endovascular_aneurysm_repair_date',
+    'second_hybrid_procedures_date',
+    'unknown_cath_operation_third',
+    'third_balloon_angioplasty_date',
+    'third_angioplasty_with_covered_stent_date',
+    'third_angioplasty_with_bare_metal_date',
+    'third_thoracic_endovascular_aneurysm_repair_date',
+    'third_hybrid_procedures_date'
 }
 
 categoricalChoices = {
@@ -114,5 +205,4 @@ renameColumns = {
     'coexistent_lesions___9': 'lesion_other'
 }
 
-tableColumns = [('Grouped by cardiovascular_event', 'Missing'),('Grouped by cardiovascular_event', 'Overall'),('Grouped by cardiovascular_event','No Cardiovascular Event'),('Grouped by cardiovascular_event','Cardiovascular Event'),('Grouped by cardiovascular_event', 'P-Value')]
 tableLevels = ['Missing','Overall','No Cardiovascular Event','Cardiovascular Event', 'P-Value']
