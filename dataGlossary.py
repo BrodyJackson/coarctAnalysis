@@ -205,4 +205,4 @@ renameColumns = {
     'coexistent_lesions___9': 'lesion_other'
 }
 tableColumns = [('Grouped by cardiovascular_event', 'Overall'),('Grouped by cardiovascular_event','No Cardiovascular Event'),('Grouped by cardiovascular_event','Cardiovascular Event'),('Grouped by cardiovascular_event', 'P-Value')]
-tableLevels = ['Missing','Overall','No Cardiovascular Event','Cardiovascular Event', 'P-Value']
+tableLevels = ['Overall','No Cardiovascular Event','Cardiovascular Event', 'P-Value']

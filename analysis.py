@@ -72,9 +72,9 @@ df['age'] = df['patient_birth_date'].apply(determineAge)
 operations = cathOperations.union(surgeryOperations)
 def createOperationBool(row, original): 
     if (pd.isnull(row[original])):
-        return 0
+        return 'No'
     else: 
-        return 1
+        return 'Yes'
 for x in operations:
     df[f'{x}_bool'] = df.apply(createOperationBool, original = x, axis = 1)
 
@@ -110,7 +110,9 @@ for x in tablesToCreate:
     table = createSummaryTable(x, True) if x != 'outcomes' else createSummaryTable(x, False)
     table.tableone.to_html(fileName)
     tableHeaders = tableLevels 
-    print(table.tabulate(headers=tableHeaders, tablefmt="github"))
+    # with open(fileName, 'w') as f:
+    #     f.write(table.tabulate(headers=tableHeaders, tablefmt="html"))
+    # print(table.tabulate(headers=tableHeaders, tablefmt="latex"))
 
 # print(summaryTableDf.to_string())
 # fileName = 'summaryTable.html'
