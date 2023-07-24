@@ -43,7 +43,7 @@ currentMedications = {
     'asa',
     'statins',
     'diuretics',
-    'total_num_antihypertensives '
+    'total_num_antihypertensives'
 }
 
 surgicalHistory = {
@@ -133,7 +133,7 @@ categoricalChoices = {
     'aortic_aneurysm': {0: 'No (Normal)', 1: 'Aortic root aneurysm', 2: 'Ascending aortic aneurysm', 3: 'Aneurysm extending to ascending aortic arch', 4: 'Diffuse aortic aneurysm', 5: 'Subclavian associated aneurysm', 6: 'Aneurysm of descending aorta', 7: 'Other aneurysm'},
     'aortic_aneurysm_repaired': {0: 'No', 1: 'Surgical Repair', 2: '', 3: 'Trans-catheter repair'},
     'current_coarctation_present': {0: 'No', 1: 'Yes'},
-    'coarctation_type': {0: 'Native coarctation', 1: 'Re-coarctation'},
+    'coarctation_type': {0: 'Native coarctation', 2: 'Re-coarctation'},
     'previous_coarctation_intervention': {0: 'No', 1: 'Yes'},
     'coarctation_less_three_mm': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'coarctation_with_complete_obstruction': {0: 'No', 1: 'Yes', 9: 'Unknown'},
@@ -204,5 +204,5 @@ renameColumns = {
     'coexistent_lesions___8': 'lesion_interrupted_aortic_arch',
     'coexistent_lesions___9': 'lesion_other'
 }
-
+tableColumns = [('Grouped by cardiovascular_event', 'Overall'),('Grouped by cardiovascular_event','No Cardiovascular Event'),('Grouped by cardiovascular_event','Cardiovascular Event'),('Grouped by cardiovascular_event', 'P-Value')]
 tableLevels = ['Missing','Overall','No Cardiovascular Event','Cardiovascular Event', 'P-Value']
