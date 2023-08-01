@@ -9,9 +9,6 @@ from dataGlossary import outcomeDateColumns
 from dataGlossary import operationDateColumns
 
 def generateSurvivalAnalysis (df):
-    kmf = KaplanMeierFitter()
-    naf = NelsonAalenFitter()
-
     df["cardiovascular_event"].info()
     def findEarliestOp(row):
         earliestOpDate = datetime.today().date()
@@ -43,7 +40,16 @@ def generateSurvivalAnalysis (df):
     # print(df['earliest_op'].to_string())
     # print(df['earliest_event'].to_string())
     # print(dfCleaned['time_to_event'].to_string())
-    kmf.fit(durations = dfCleaned['time_to_event'], event_observed = dfCleaned['cardiovascular_event'])
+
+    # generateTotalSurvival(dfCleaned)
+    generateGroupedSurvival(dfCleaned)
+    plt.show()
+    return True
+
+def generateTotalSurvival (df):
+    kmf = KaplanMeierFitter()
+    naf = NelsonAalenFitter()
+    kmf.fit(durations = df['time_to_event'], event_observed = df['cardiovascular_event'])
     print(kmf.event_table)
     print(kmf.survival_function_)
     print(kmf.median_survival_time_)
@@ -58,18 +64,58 @@ def generateSurvivalAnalysis (df):
     plt.title("The Cumulative Density Estimate")
     plt.ylabel("Probability of cv outcome")
 
-    naf.fit(dfCleaned["time_to_event"],event_observed = dfCleaned["cardiovascular_event"])
+    naf.fit(df["time_to_event"],event_observed = df["cardiovascular_event"])
     plt.figure(3)
     naf.plot_cumulative_hazard()
     plt.title("Cumulative Hazard by time to event")
     plt.ylabel("Probability of cv outcome")
 
-    naf.fit(dfCleaned["age"],event_observed = dfCleaned["cardiovascular_event"])
+    naf.fit(df["age"],event_observed = df["cardiovascular_event"])
     print (naf.cumulative_hazard_)
     plt.figure(4)
     naf.plot_cumulative_hazard()
     plt.title("Cumulative Hazard by age")
     plt.ylabel("Probability of cv outcome")
 
-    plt.show()
-    return True
+    
+
+def generateGroupedSurvival (df):
+
+    def Kaplan(df, timeColumn, eventColumn, info):
+        kmf = KaplanMeierFitter()
+        for value in info:
+            fitFrame = df.query(value[0])
+            kmf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
+            plt.figure(5)
+            kmf.plot_survival_function(ci_alpha=0.1)
+            plt.title("The Kaplan-Meier Estimate")
+            plt.ylabel("Probability of no outcome")
+            plt.figure(6)
+            kmf.plot_cumulative_density(ci_alpha=0.1)
+            plt.title("The Cumulative Density Estimate")
+            plt.ylabel("Probability of cv outcome")
+        
+    def Hazard(df, timeColumn, eventColumn, info):
+        naf = NelsonAalenFitter()
+        for value in info:
+            fitFrame = df.query(value[0])
+            naf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
+            naf.plot_cumulative_hazard(ci_show=False)
+       
+    groupedInfo = [
+        ("hypertension == 1", "Hypertension"),
+        ("dyslipidemia == 1", "Dyslipidemia"),
+        ("smoking_status == 1 | smoking_status == 2", "Smoking History"),
+        ("diabetes == 1", "Diabetes"),
+        ("family_premature_cad_hist == 1", "Family Early CAD")
+    ]
+
+    Kaplan(df, "time_to_event", "cardiovascular_event", groupedInfo)
+    plt.figure(7)
+    plt.title("Cumulative Hazard by time to event")
+    plt.ylabel("Probability of cv outcome")
+    Hazard(df, "time_to_event", "cardiovascular_event", groupedInfo)
+    plt.figure(8)
+    plt.title("Cumulative Hazard by age")
+    plt.ylabel("Probability of cv outcome")
+    Hazard(df, "age", "cardiovascular_event", groupedInfo)
