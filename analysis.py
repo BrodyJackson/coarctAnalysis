@@ -10,6 +10,8 @@ from dataGlossary import surgeryOperations
 from dataGlossary import cathOperations
 from descriptiveStats import createTableOne
 
+from survivalAnalysis import generateSurvivalAnalysis
+
 data = 'coarctData.csv'
 
 df = pd.read_csv(data)
@@ -19,7 +21,7 @@ df.drop(list(df.filter(regex = '_complete')), axis = 1, inplace = True)
 df.rename(columns=renameColumns, inplace=True)
 # find the completely empty columns
 empty_cols = [col for col in df.columns if df[col].isnull().all()]
-print(empty_cols)
+# print(empty_cols)
 
 # Add a new column to each row to determine if that patient had a negative cardiovascular outcome
 # Negative outcome columns are determined in the data glossary file
@@ -91,7 +93,7 @@ def createSummaryTable(table, renameColumns):
             tuplesList.append((label[0], newLabel))
         return tuplesList
 
-    print(summaryTableDf.columns.names)
+    # print(summaryTableDf.columns.names)
     summaryTableDf.index = pd.MultiIndex.from_tuples(createProperLabels(summaryTableDf), names=summaryTableDf.index.names)
     
     if renameColumns:
@@ -102,16 +104,35 @@ def createSummaryTable(table, renameColumns):
 
     return summaryTable
 
+def filterNoEffect(table):
+    unstacked = table.tableone.reset_index()
+    onlyEffects = unstacked[~unstacked.level_1.isin(['No', 'Unknown'])]
+    unaffected = unstacked[unstacked.level_1.isin(['No', 'Unknown'])]
+    for index, row in unaffected.iterrows():
+        rowWithP = row['Grouped by cardiovascular_event']['P-Value']
+        rowWithPLabel = row['level_0'][0]
+        occuranceRow = onlyEffects.loc[[onlyEffects.level_0.eq(rowWithPLabel).idxmax()]]
+        if rowWithP and rowWithPLabel == occuranceRow['level_0']:
+            # Find the first occurance of matching title and move the P value of removed column onto it
+            occuranceRow[P-Value] = row['Grouped by cardiovascular_event']['P-Value']
+    
+    # print(onlyEffects.to_string())
+    table = onlyEffects.set_index(['level_0', 'level_1'], inplace=True)
+    return table
+
 
 # print(summaryTableDf.columns.levels[1])
+
+survivalCurves = generateSurvivalAnalysis(df)
 tablesToCreate = ['demographics', 'surgeries', 'outcomes']
 for x in tablesToCreate:
     fileName = f"{x}.html"
     table = createSummaryTable(x, True) if x != 'outcomes' else createSummaryTable(x, False)
+    # table = filterNoEffect(table)
     table.tableone.to_html(fileName)
     tableHeaders = tableLevels 
-    # with open(fileName, 'w') as f:
-    #     f.write(table.tabulate(headers=tableHeaders, tablefmt="html"))
+    with open(fileName, 'w') as f:
+        f.write(table.tabulate(headers=tableHeaders, tablefmt="html"))
     # print(table.tabulate(headers=tableHeaders, tablefmt="latex"))
 
 # print(summaryTableDf.to_string())

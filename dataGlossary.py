@@ -192,6 +192,66 @@ categoricalChoices = {
     'loss_to_follow_up': {0: 'No', 1: 'Yes'}
 }
 
+operationDateColumns = {
+    'unknown_operation_first',
+    'resection_end_to_end_anastamosis_index',
+    'patch_angioplasty_date_index',
+    'subclavian_flap_angioplasty_index',
+    'interposition_graft_index',
+    'unknown_operation_second',
+    'resection_end_to_end_anastamosis_second',
+    'patch_angioplasty_date_second',
+    'subclavian_flap_angioplasty_second',
+    'interposition_graft_second',
+    'resection_end_to_end_anastamosis_third',
+    'patch_angioplasty_date_third',
+    'subclavian_flap_angioplasty_third',
+    'interposition_graft_third',
+    'unknown_cath_operation_first',
+    'index_balloon_angioplasty_date',
+    'index_angioplasty_with_covered_stent_date',
+    'index_angioplasty_with_bare_metal_date',
+    'index_thoracic_endovascular_aneurysm_repair_date',
+    'index_hybrid_procedures_date',
+    'second_balloon_angioplasty_date',
+    'second_angioplasty_with_covered_stent_date',
+    'second_angioplasty_with_bare_metal_date',
+    'second_thoracic_endovascular_aneurysm_repair_date',
+    'second_hybrid_procedures_date',
+    'third_balloon_angioplasty_date',
+    'third_angioplasty_with_covered_stent_date',
+    'third_angioplasty_with_bare_metal_date',
+    'third_thoracic_endovascular_aneurysm_repair_date',
+    'third_hybrid_procedures_date'
+}
+
+outcomeDateColumns = {
+    'date_of_aortic_aneurysm_repair',
+    'date_of_afib',
+    'date_of_aneurysm',
+    'date_of_aortic_dissection',
+    'date_of_renal_failure',
+    'date_of_heart_failure',
+    'date_of_femoral_artery_occlusion',
+    'date_of_coronary_artery_disease',
+    'date_of_mi',
+    'date_of_stroke',
+    'date_of_intracranial_aneurysm',
+    'date_of_infective_endocarditis',
+    'date_of_claudication_pain',
+    'date_of_stent_fracture',
+    'date_of_surgery_complications',
+    'date_of_death',
+    'date_of_coronary_air_embolization',
+    'date_of_stent_embolization',
+    'date_of_emergent_surgery',
+    'date_of_periprocedural_stroke',
+    'date_of_aortic_dissection_post_angio',
+    'date_of_cardioversion',
+    'date_of_blood_transfusion',
+    'date_of_surgical_repair_vascular_access'
+}
+
 renameColumns = {
     'coexistent_lesions___0': 'lesion_none',
     'coexistent_lesions___1': 'lesion_asd',
