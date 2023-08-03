@@ -64,10 +64,10 @@ cardiovascularEvents = {
     'stroke',
     'intracranial_aneurysm',
     'infective_endocarditis',
+    'death',
     'claudication_pain_lower_or_upper_left',
     'stent_fracture',
     'surgery_related_complications',
-    'death',
     'coronary_air_embolization',
     'stent_embolization',
     'emergent_surgery',
@@ -76,6 +76,24 @@ cardiovascularEvents = {
     'arrhythmia_requiring_cardioversion',
     'need_for_blood_transfusion',
     'need_for_surgical_vascular_site_repair'
+}
+
+majorCardioEvent = {
+    'presence_of_aneurysm_location',
+    'presence_of_aortic_dissection',
+    'renal_failure',
+    'heart_failure',
+    'femoral_artery_occlusion',
+    'coronary_artery_disease',
+    'myocardial_infarction',
+    'stroke',
+    'intracranial_aneurysm',
+    'infective_endocarditis',
+    'death',
+    'periprocedural_stroke',
+    'aortic_dissection_post_angio',
+    'arrhythmia_requiring_cardioversion',
+    'need_for_blood_transfusion'
 }
 
 surgeryOperations = {
@@ -120,16 +138,19 @@ cathOperations = {
 categoricalChoices = {
     'sex': {0: 'Female', 1: 'Male', 2: 'Other'},
     'diabetes': {0: 'No', 1: 'Yes', 9: 'Unknown'},
-    'smoking_status': {0: 'Never smoked', 1: 'Ex smoker', 2: 'Current smoker', 9: 'Unknown'},
+    # 'smoking_status': {0: 'Never smoked', 1: 'Ex smoker', 2: 'Current smoker', 9: 'Unknown'},
+    'smoking_status': {0: 'Never smoked', 1: 'History of smoking', 9: 'Unknown'},
     'family_premature_cad_hist': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'hypertension': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'dyslipidemia': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'claudication_pain': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'aortopathies': {0: 'No', 1: 'Turner', 2: 'Marfan', 3: 'Bicuspid aortic valve with ascending aortic aneurysm', 4: 'Hypoplastic aorta/aortic arch', 9: 'Unknown'},
     'aortic_valve_morphology': {0: 'Native tri-leaflet', 1: 'Repaired/replaced tri-leaflet', 2: 'Native bicuspid', 3: 'Repaired/replaced bicuspid'},
-    'indication_for_repair': {0: 'Aortic Stenosis', 1: 'Aortic Insufficiency/Regurgitation'},
+    #The one below changed from original data mapping
+    'indication_for_repair': {0: 'Normal', 1: 'Aortic Stenosis', 2: 'Aortic Insufficiency/Regurgitation'},
     'valve_current_condition': {0: 'Normal', 1: 'Stenotic', 2: 'Regurgitant'},
-    'valve_current_type': {0: 'Bio-prosthetic ', 1: 'Mechanical ', 2: 'Previously ballooned', 3: 'Surgically repaired native valve', 9: 'Unknown'},
+    #The one below changed from original data mapping
+    'valve_current_type': {0: 'Normal', 1: 'Bio-prosthetic ', 2: 'Mechanical ', 3: 'Previously ballooned', 4: 'Surgically repaired native valve', 9: 'Unknown'},
     'aortic_aneurysm': {0: 'No (Normal)', 1: 'Aortic root aneurysm', 2: 'Ascending aortic aneurysm', 3: 'Aneurysm extending to ascending aortic arch', 4: 'Diffuse aortic aneurysm', 5: 'Subclavian associated aneurysm', 6: 'Aneurysm of descending aorta', 7: 'Other aneurysm'},
     'aortic_aneurysm_repaired': {0: 'No', 1: 'Surgical Repair', 2: '', 3: 'Trans-catheter repair'},
     'current_coarctation_present': {0: 'No', 1: 'Yes'},
@@ -266,3 +287,14 @@ renameColumns = {
 }
 tableColumns = [('Grouped by cardiovascular_event', 'Overall'),('Grouped by cardiovascular_event','No Cardiovascular Event'),('Grouped by cardiovascular_event','Cardiovascular Event'),('Grouped by cardiovascular_event', 'P-Value')]
 tableLevels = ['Overall','No Cardiovascular Event','Cardiovascular Event', 'P-Value']
+
+hiddenAttributes = {
+    'indication_for_repair',
+    'valve_current_condition',
+    'valve_current_type',
+}
+
+needsAZeroValue = {
+    'indication_for_repair',
+    'valve_current_type',
+}
