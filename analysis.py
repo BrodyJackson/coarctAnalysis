@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, date
+import scipy.stats as stats
 
 from dataGlossary import renameColumns
 from dataGlossary import cardiovascularEvents as cardioEvent
@@ -26,6 +27,23 @@ df.rename(columns=renameColumns, inplace=True)
 empty_cols = [col for col in df.columns if df[col].isnull().all()]
 # print(empty_cols)
 
+df['number_of_surgeries'] = df[list(surgeryOperations)].count(axis=1)
+df['number_of_cath'] = df[list(cathOperations)].count(axis=1)
+
+# Add a new column to each row to determine if that patient had exclusively sugeries, or catheter, or vice versa
+# 0 means they had combo, 1 means they had only surgeries, 2 means they had only catheters
+def hadOnlyOneOpType(row):
+    if row["number_of_cath"] == 0 and row["number_of_surgeries"] >= 1:
+        return 1
+    elif row["number_of_cath"] >= 1 and row["number_of_surgeries"] == 0:
+        return 2
+    return 0
+
+df['had_one_op_type'] = df.apply(hadOnlyOneOpType, axis = 1)
+df['only_catheters'] = df.apply(lambda x: 1 if x['had_one_op_type'] == 2 else 0, axis = 1)
+df['only_surgeries'] = df.apply(lambda x: 1 if x['had_one_op_type'] == 1 else 0, axis = 1)
+
+#Filter out the attributes that need to be hidden
 for choice in hiddenAttributes:
     if choice in needsAZeroValue:
         df[choice] = df[choice].apply(lambda x: int(x + 1) if not pd.isnull(x) and x != 9 else np.nan)
@@ -43,7 +61,7 @@ for choice in categoricalChoices:
 # Add a new column to each row to determine if that patient had a negative cardiovascular outcome
 # Negative outcome columns are determined in the data glossary file
 def hadEvent(row):
-    for col in cardioEvent:
+    for col in majorCardioEvent: #Just swapped to major temporarily. Swap back if need all outcomes
         if (row[col] != 0):
             return 1
         else: 
@@ -79,9 +97,6 @@ def determineSpecificOperationCounts(keyword, operationList):
 surgicalOperationNumber = df[list(surgeryOperations)].count().sum()
 cathOperationNumber = df[list(cathOperations)].count().sum()
 
-df['number_of_surgeries'] = df[list(surgeryOperations)].count(axis=1)
-df['number_of_cath'] = df[list(cathOperations)].count(axis=1)
-
 # Get the total number of operatioTypes across all a patients surgeries
 operationDetails = {
     'unknownSurgNum': determineSpecificOperationCounts('unknown', surgeryOperations),
@@ -96,7 +111,7 @@ operationDetails = {
     'endoCathNum': determineSpecificOperationCounts('endovascular', cathOperations),
     'hybridCathNum': determineSpecificOperationCounts('hybrid', cathOperations)
 }
-
+      
 # Add a new column to each row to determine patients age
 df['age'] = df['patient_birth_date'].apply(determineAge)
 
@@ -113,11 +128,21 @@ fillNa = ['number_of_transcatheter_interventions', 'number_of_open_surgical_inte
 fillNaMean = ['height', 'weight', 'bmi']
 for x in fillNa:
     df[x] = df[x].fillna(0)
-    print(df[x])
 for x in fillNaMean:
     df[x].fillna((df[x].mean()), inplace=True)
 
 df['smoking_status'] = df['smoking_status'].replace(2,1)
+
+# Test all columns for normality
+# for col in list(df.select_dtypes('number')): 
+#     print(col)
+#     a,b = stats.shapiro(df[col])
+#     print(a,b)
+#     if b < 0.05: 
+#         print('not normal')
+#     else: 
+#         print('normal')
+
 # Create descriptive statistics table
 def createSummaryTable(table, renameColumns):
     summaryTable = createTableOne(df, table)

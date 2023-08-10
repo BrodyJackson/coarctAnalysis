@@ -33,6 +33,7 @@ def generateSurvivalAnalysis (df):
     df['earliest_event'] = df.apply(findEarliestEvent, axis=1)
     df['time_to_event'] = df.apply(lambda x: (x['earliest_event'] - x['earliest_op']).days / 365.25, axis=1)
     df['time_to_event'] = df.apply(lambda x: 0.5 if x['time_to_event'] == 0 else x['time_to_event'], axis=1)
+    df['age_first_surgery'] = df.apply(lambda x: (x['earliest_op'] - datetime.strptime(x['patient_birth_date'], "%Y-%m-%d").date()).days / 365.25, axis=1)
 
     dfCleaned = df.loc[df['time_to_event'] >= 0]
     # print(df.loc[107].to_string())
@@ -81,16 +82,16 @@ def generateTotalSurvival (df):
 
 def generateGroupedSurvival (df):
 
-    def Kaplan(df, timeColumn, eventColumn, info):
+    def Kaplan(df, timeColumn, eventColumn, info, plotNum):
         kmf = KaplanMeierFitter()
         for value in info:
             fitFrame = df.query(value[0])
             kmf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
-            plt.figure(5)
+            plt.figure(plotNum[0])
             kmf.plot_survival_function(ci_alpha=0.1)
             plt.title("The Kaplan-Meier Estimate")
             plt.ylabel("Probability of no outcome")
-            plt.figure(6)
+            plt.figure(plotNum[1])
             kmf.plot_cumulative_density(ci_alpha=0.1)
             plt.title("The Cumulative Density Estimate")
             plt.ylabel("Probability of cv outcome")
@@ -119,6 +120,12 @@ def generateGroupedSurvival (df):
         ("family_premature_cad_hist == 1", "Family Early CAD")
     ]
 
+    surgeryGroups = [
+        ("had_one_op_type == 0", "Received both operation types"),
+        ("had_one_op_type == 1", "Received only surgeries"),
+        ("had_one_op_type == 2", "Received only catheterizations"),
+    ]
+
     outcomesOfInterest = [
         'presence_of_aneurysm_location',
         'presence_of_aortic_dissection',
@@ -135,19 +142,30 @@ def generateGroupedSurvival (df):
         'death',
     ]
 
-    Kaplan(df, "time_to_event", "cardiovascular_event", groupedInfo)
+    Kaplan(df, "time_to_event", "cardiovascular_event", groupedInfo, (5,6))
+    Kaplan(df, "time_to_event", "cardiovascular_event", surgeryGroups, (7,8))
     
-    plt.figure(7)
+    plt.figure(9)
     plt.title("Cumulative Hazard by time to event")
     plt.ylabel("Probability of cv outcome")
     Hazard(df, "time_to_event", "cardiovascular_event", groupedInfo)
     
-    plt.figure(8)
+    plt.figure(10)
     plt.title("Cumulative Hazard by age")
     plt.ylabel("Probability of cv outcome")
     Hazard(df, "age", "cardiovascular_event", groupedInfo)
     
-    plt.figure(9)
+    plt.figure(11)
+    plt.title("Cumulative Hazard by time to event grouped by patient surgery")
+    plt.ylabel("Probability of cv outcome")
+    Hazard(df, "time_to_event", "cardiovascular_event", surgeryGroups)
+
+    plt.figure(12)
+    plt.title("Cumulative Hazard by time to event grouped by patient surgery by age")
+    plt.ylabel("Probability of cv outcome")
+    Hazard(df, "age", "cardiovascular_event", surgeryGroups)
+
+    plt.figure(13)
     plt.title("Hazard risk of individual outcome by age")
     plt.ylabel("Probability of cv outcome")
     HazardDiffOutcomes(df, "age")
@@ -172,10 +190,10 @@ def generateCoxRegression(df):
     columnsToInclude = [
         'time_to_event',
         'cardiovascular_event',
-        'age',
+        'age_first_surgery',
         'sex',
-        'height',
-        'weight',
+        # 'height',
+        # 'weight',
         'bmi',
         'hypertension',
         'dyslipidemia',
@@ -199,7 +217,7 @@ def generateCoxRegression(df):
 
          #not working
         'number_of_transcatheter_interventions',
-        'number_of_open_surgical_interventions',
+        # 'number_of_open_surgical_interventions',
 
         'coarctation_less_three_mm',
         'interrupted_aortic_arch',
@@ -222,9 +240,6 @@ def generateCoxRegression(df):
 
     dfFiltered = df[columnsToInclude]
 
-    for col in categoricalColumns:
-        print(col, dfFiltered[col].unique())
-
     dummieFrames = []
     for col in needsDummies:
         dummiesFrame = pd.get_dummies(dfFiltered[col], prefix = col, dtype=int)
@@ -232,7 +247,7 @@ def generateCoxRegression(df):
         dummieFrames.append(dummiesFrame)
     dummieFrames.append(dfFiltered)
     dfFiltered = pd.concat(dummieFrames, axis = 1)
-    print(dfFiltered.loc[:, dfFiltered.isna().any()].to_string())
+    # print(dfFiltered.loc[:, dfFiltered.isna().any()].to_string())
     dfFiltered = dfFiltered.dropna()
     # Getting rid of all the columns that indicate no or null
     dfFiltered.drop(list(dfFiltered.filter(regex = '_0$')), axis = 1, inplace = True)
@@ -240,10 +255,10 @@ def generateCoxRegression(df):
     # plt.hist(dfFiltered['time_to_event'], bins = 50)
     # plt.show()
     kmf = KaplanMeierFitter()
-    cph = CoxPHFitter(penalizer=0.0001)
-    cph.fit(dfFiltered,"time_to_event", event_col="cardiovascular_event", strata=['number_of_open_surgical_interventions', 'family_premature_cad_hist'])
+    cph = CoxPHFitter(penalizer=0.001)
+    cph.fit(dfFiltered,"time_to_event", event_col="cardiovascular_event", strata=['claudication_pain', 'family_premature_cad_hist'])
     cph.print_summary()
-    plt.figure(10)
-    cph.plot()
-    # cph.plot_partial_effects_on_outcome(covariates = 'age', values = [30, 40, 50, 60, 70, 80], cmap = 'coolwarm')
-    cph.check_assumptions(dfFiltered, p_value_threshold = 0.05)
+    # plt.figure(10)
+    # cph.plot()
+    cph.plot_partial_effects_on_outcome(covariates = 'age_first_surgery', values = [0, 1, 5, 10, 20, 30, 50], cmap = 'coolwarm')
+    # cph.check_assumptions(dfFiltered, p_value_threshold = 0.05)

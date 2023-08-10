@@ -83,17 +83,10 @@ majorCardioEvent = {
     'presence_of_aortic_dissection',
     'renal_failure',
     'heart_failure',
-    'femoral_artery_occlusion',
-    'coronary_artery_disease',
     'myocardial_infarction',
     'stroke',
-    'intracranial_aneurysm',
     'infective_endocarditis',
-    'death',
-    'periprocedural_stroke',
-    'aortic_dissection_post_angio',
-    'arrhythmia_requiring_cardioversion',
-    'need_for_blood_transfusion'
+    'death'
 }
 
 surgeryOperations = {
@@ -210,7 +203,8 @@ categoricalChoices = {
     'need_for_blood_transfusion': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'need_for_surgical_vascular_site_repair': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'transferred_centres': {0: 'No', 1: 'Yes'},
-    'loss_to_follow_up': {0: 'No', 1: 'Yes'}
+    'loss_to_follow_up': {0: 'No', 1: 'Yes'},
+    'had_one_op_type': {0: 'No', 1: 'Only received surgeries', 2: 'Only received catheters'}
 }
 
 operationDateColumns = {

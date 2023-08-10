@@ -1,4 +1,5 @@
 from tableone import TableOne
+import scipy.stats as stats
 
 categoricalValuesDemographics = [
     'sex',
@@ -18,6 +19,7 @@ categoricalValuesDemographics = [
     'current_coarctation_present',
     'coarctation_type',
     'previous_coarctation_intervention',
+    'had_one_op_type',
     'coarctation_less_three_mm',
     'interrupted_aortic_arch',
     'presence_of_collaterals',
@@ -60,6 +62,7 @@ allColumnsDemographics = [
     'ecg_sinus_rhythm',
     'ecg_afib',
     'cardiopulmonary_exercise_test_performed',
+    'had_one_op_type',
     'number_of_surgeries',
     'number_of_cath',
     'beta_blockers',
@@ -231,6 +234,7 @@ allColumnsOutcomes = [
     'need_for_surgical_vascular_site_repair'
 ]
 
+
 def createTableOne(df, type):
     groupby = ['cardiovascular_event'] if type != 'outcomes' else None
     pvalue = True if type != 'outcomes' else False
@@ -239,10 +243,26 @@ def createTableOne(df, type):
     empty_cols = [col for col in df.columns if df[col].isnull().all()]
     allColumns = [ i for i in allColumns if i not in empty_cols]
     categoricalValues = [ i for i in categoricalValues if i not in empty_cols]
+
+    allCategorical = categoricalValuesDemographics + categoricalValuesSurgeries + categoricalValuesOutcomes
+    nonNormal = []
+
+    # Find non-normal columns
+    for col in list(df.select_dtypes('number')): 
+        if (col not in allCategorical and col in allColumns):
+            print(col)
+            a,b = stats.shapiro(df[col])
+            print(a,b)
+            if b < 0.05: 
+                print('not normal')
+                nonNormal.append(col)
+            else: 
+                print('normal')
+
     # nonnormal = []
     # labels={}
     # categorical = []
     # mytable = TableOne(df, columns=columns, categorical=categorical, groupby=groupby, nonnormal=nonnormal, rename=labels, pval=False)
-    myTable = TableOne(df, columns=allColumns, categorical=categoricalValues, groupby=groupby, missing=False, pval=pvalue)
+    myTable = TableOne(df, columns=allColumns, categorical=categoricalValues, groupby=groupby, missing=False, nonnormal=nonNormal, pval=pvalue)
     return myTable
     
