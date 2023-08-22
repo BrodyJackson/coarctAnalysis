@@ -20,6 +20,7 @@ categoricalValuesDemographics = [
     'coarctation_type',
     'previous_coarctation_intervention',
     'had_one_op_type',
+    'first_op_type',
     'coarctation_less_three_mm',
     'interrupted_aortic_arch',
     'presence_of_collaterals',
@@ -63,6 +64,7 @@ allColumnsDemographics = [
     'ecg_afib',
     'cardiopulmonary_exercise_test_performed',
     'had_one_op_type',
+    'first_op_type',
     'number_of_surgeries',
     'number_of_cath',
     'beta_blockers',
@@ -250,19 +252,10 @@ def createTableOne(df, type):
     # Find non-normal columns
     for col in list(df.select_dtypes('number')): 
         if (col not in allCategorical and col in allColumns):
-            print(col)
             a,b = stats.shapiro(df[col])
-            print(a,b)
             if b < 0.05: 
-                print('not normal')
                 nonNormal.append(col)
-            else: 
-                print('normal')
 
-    # nonnormal = []
-    # labels={}
-    # categorical = []
-    # mytable = TableOne(df, columns=columns, categorical=categorical, groupby=groupby, nonnormal=nonnormal, rename=labels, pval=False)
     myTable = TableOne(df, columns=allColumns, categorical=categoricalValues, groupby=groupby, missing=False, nonnormal=nonNormal, pval=pvalue)
     return myTable
     

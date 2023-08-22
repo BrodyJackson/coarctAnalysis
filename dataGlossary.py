@@ -1,20 +1,20 @@
-demographicFeatures = {
+demographicFeatures = [
     'age',
     'sex',
     'height',
     'weight',
     'bmi'
-}
+]
 
-vascularRisk = {
+vascularRisk = [
     'hypertension',
     'dyslipidemia',
     'smoking_status',
     'diabetes',
     'family_premature_cad_hist',
-}
+]
 
-currentClinicalFeatures = {
+currentClinicalFeatures = [
     'claudication_pain',
     'aortopathies',
     'aortic_valve_morphology',
@@ -34,9 +34,9 @@ currentClinicalFeatures = {
     'ecg_sinus_rhythm',
     'ecg_afib',
     'cardiopulmonary_exercise_test_performed', 
-}
+]
 
-currentMedications = {
+currentMedications = [
     'beta_blockers',
     'calcium_channel_blockers',
     'ace_inhibitors_arbs',
@@ -44,7 +44,7 @@ currentMedications = {
     'statins',
     'diuretics',
     'total_num_antihypertensives'
-}
+]
 
 surgicalHistory = {
 
@@ -204,7 +204,8 @@ categoricalChoices = {
     'need_for_surgical_vascular_site_repair': {0: 'No', 1: 'Yes', 9: 'Unknown'},
     'transferred_centres': {0: 'No', 1: 'Yes'},
     'loss_to_follow_up': {0: 'No', 1: 'Yes'},
-    'had_one_op_type': {0: 'No', 1: 'Only received surgeries', 2: 'Only received catheters'}
+    'had_one_op_type': {0: 'No', 1: 'Only received surgeries', 2: 'Only received catheters'},
+    'first_op_type': {0: 'No', 1: 'Surgery first', 2: 'Cath first'}
 }
 
 operationDateColumns = {

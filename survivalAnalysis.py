@@ -1,14 +1,19 @@
 import matplotlib.pyplot as plt
 from lifelines import KaplanMeierFitter, NelsonAalenFitter, CoxPHFitter, SplineFitter, LogNormalFitter
+from lifelines.statistics import pairwise_logrank_test
+from statsmodels.stats.proportion import proportion_confint
 from datetime import datetime
 import pandas as pd
+import numpy as np
+import re
 
 
 from dataGlossary import outcomeDateColumns
 from dataGlossary import operationDateColumns
+from featureImportance import findFeatureImportance
+from helpers import createDummies, findNull
 
 def generateSurvivalAnalysis (df):
-    df["cardiovascular_event"].info()
     def findEarliestOp(row):
         earliestOpDate = datetime.today().date()
         for column in operationDateColumns:
@@ -36,14 +41,11 @@ def generateSurvivalAnalysis (df):
     df['age_first_surgery'] = df.apply(lambda x: (x['earliest_op'] - datetime.strptime(x['patient_birth_date'], "%Y-%m-%d").date()).days / 365.25, axis=1)
 
     dfCleaned = df.loc[df['time_to_event'] >= 0]
-    # print(df.loc[107].to_string())
-    # print(df['earliest_op'].to_string())
-    # print(df['earliest_event'].to_string())
-    # print(dfCleaned['time_to_event'].to_string())
 
-    generateTotalSurvival(dfCleaned)
-    generateGroupedSurvival(dfCleaned)
-    generateCoxRegression(dfCleaned)
+    importantFeatures = findFeatureImportance(dfCleaned)
+    # generateTotalSurvival(dfCleaned)
+    # generateGroupedSurvival(dfCleaned)
+    generateCoxRegression(dfCleaned, importantFeatures)
     plt.show()
     return True
 
@@ -79,41 +81,40 @@ def generateTotalSurvival (df):
     plt.ylabel("Probability of cv outcome")
 
     
+def Kaplan(df, timeColumn, eventColumn, info, plotNum):
+    kmf = KaplanMeierFitter()
+    for value in info:
+        fitFrame = df.query(value[0])
+        kmf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
+        plt.figure(plotNum[0])
+        kmf.plot_survival_function(ci_alpha=0.5)
+        plt.title("The Kaplan-Meier Estimate")
+        plt.ylabel("Probability of no outcome")
+        plt.figure(plotNum[1])
+        kmf.plot_cumulative_density(ci_alpha=0.5)
+        plt.title("The Cumulative Density Estimate")
+        plt.ylabel("Probability of cv outcome")
+
+def Hazard(df, timeColumn, eventColumn, info):
+    naf = NelsonAalenFitter()
+    for value in info:
+        fitFrame = df.query(value[0])
+        naf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
+        naf.plot_cumulative_hazard(ci_show=False)
+
+def HazardDiffOutcomes(df, timeColumn):
+    naf = NelsonAalenFitter()
+    for value in outcomesOfInterest:
+        # spf = SplineFitter([0,50,100]).fit(df[timeColumn], df[value], label=value.replace('_', ' '))
+        #determine which fitter I shuold use
+        # spf = LogNormalFitter().fit(durations=df[timeColumn], event_observed=df[value], label=value.replace('_', ' '))
+        naf.fit(durations=df[timeColumn], event_observed=df[value], label=value.replace('_', ' '))
+        naf.plot_cumulative_hazard(ci_show=False)
 
 def generateGroupedSurvival (df):
-
-    def Kaplan(df, timeColumn, eventColumn, info, plotNum):
-        kmf = KaplanMeierFitter()
-        for value in info:
-            fitFrame = df.query(value[0])
-            kmf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
-            plt.figure(plotNum[0])
-            kmf.plot_survival_function(ci_alpha=0.1)
-            plt.title("The Kaplan-Meier Estimate")
-            plt.ylabel("Probability of no outcome")
-            plt.figure(plotNum[1])
-            kmf.plot_cumulative_density(ci_alpha=0.1)
-            plt.title("The Cumulative Density Estimate")
-            plt.ylabel("Probability of cv outcome")
-        
-    def Hazard(df, timeColumn, eventColumn, info):
-        naf = NelsonAalenFitter()
-        for value in info:
-            fitFrame = df.query(value[0])
-            naf.fit(durations=fitFrame[timeColumn], event_observed=fitFrame[eventColumn], label=value[1])
-            naf.plot_cumulative_hazard(ci_show=False)
-
-    def HazardDiffOutcomes(df, timeColumn):
-        naf = NelsonAalenFitter()
-        for value in outcomesOfInterest:
-            # spf = SplineFitter([0,50,100]).fit(df[timeColumn], df[value], label=value.replace('_', ' '))
-            #determine which fitter I shuold use
-            # spf = LogNormalFitter().fit(durations=df[timeColumn], event_observed=df[value], label=value.replace('_', ' '))
-            naf.fit(durations=df[timeColumn], event_observed=df[value], label=value.replace('_', ' '))
-            naf.plot_cumulative_hazard(ci_show=False)
        
     groupedInfo = [
-        ("hypertension == 1", "Hypertension"),
+        ("resistive_hypertension == 1", "Resistive Hypertension"),
         ("dyslipidemia == 1", "Dyslipidemia"),
         ("smoking_status == 1 | smoking_status == 2", "Smoking History"),
         ("diabetes == 1", "Diabetes"),
@@ -129,7 +130,7 @@ def generateGroupedSurvival (df):
     outcomesOfInterest = [
         'presence_of_aneurysm_location',
         'presence_of_aortic_dissection',
-        'systemic_hypertension',
+        'resistive_hypertension',
         'renal_failure',
         'heart_failure',
         'pulmonary_hypertension',
@@ -170,7 +171,7 @@ def generateGroupedSurvival (df):
     plt.ylabel("Probability of cv outcome")
     HazardDiffOutcomes(df, "age")
 
-def generateCoxRegression(df): 
+def generateCoxRegression(df, importantFeatures): 
     categoricalColumns = [
         'sex',
         'hypertension',
@@ -190,12 +191,13 @@ def generateCoxRegression(df):
     columnsToInclude = [
         'time_to_event',
         'cardiovascular_event',
+        'age',
         'age_first_surgery',
         'sex',
         # 'height',
         # 'weight',
         'bmi',
-        'hypertension',
+        'resistive_hypertension',
         'dyslipidemia',
         'smoking_status',
         'diabetes',
@@ -216,8 +218,9 @@ def generateCoxRegression(df):
         # 'previous_coarctation_intervention',
 
          #not working
+        'first_op_type',
         'number_of_transcatheter_interventions',
-        # 'number_of_open_surgical_interventions',
+        'number_of_open_surgical_interventions',
 
         'coarctation_less_three_mm',
         'interrupted_aortic_arch',
@@ -235,30 +238,175 @@ def generateCoxRegression(df):
         'indication_for_repair',
         'valve_current_condition',
         'valve_current_type',
+        'first_op_type'
         # 'aortic_aneurysm',
     ]
 
     dfFiltered = df[columnsToInclude]
 
-    dummieFrames = []
-    for col in needsDummies:
-        dummiesFrame = pd.get_dummies(dfFiltered[col], prefix = col, dtype=int)
-        dfFiltered = dfFiltered.drop(col, axis = 1)
-        dummieFrames.append(dummiesFrame)
-    dummieFrames.append(dfFiltered)
-    dfFiltered = pd.concat(dummieFrames, axis = 1)
-    # print(dfFiltered.loc[:, dfFiltered.isna().any()].to_string())
+    dfFiltered = createDummies(dfFiltered, needsDummies)
+    
     dfFiltered = dfFiltered.dropna()
+    dfFiltered.rename(columns={'age': 'patient_age'}, inplace=True)
     # Getting rid of all the columns that indicate no or null
-    dfFiltered.drop(list(dfFiltered.filter(regex = '_0$')), axis = 1, inplace = True)
-    # print(dfFiltered.head())
+    # dfFiltered.drop(list(dfFiltered.filter(regex = '_0$')), axis = 1, inplace = True)
+   
+    # Only include the columns in the model that were determined as important by random forest importance levels
+    dependentCols = ['time_to_event', 'cardiovascular_event']
+    numericBins = {
+        'age_first_surgery': [0, 5, 18, 30, 45, 60, 100],
+        'number_of_transcatheter_interventions': [0, 1, 2, 3],
+        'number_of_open_surgical_interventions': [0, 1, 2, 3],
+    }
+    quantileBins = {
+        'patient_age': [0, .2, .4, .6, .8, 1],
+        'bmi': [0, .2, .4, .6, .8, 1]
+    }
+    
+    importantFeatures = importantFeatures + dependentCols
+    # Create dataframes for doing cox regressions between the sub covariates
+    subRegressions = []
+    for feat in importantFeatures:
+        if feat in dependentCols:
+            continue
+        regex = r"_(\d+)$"
+        substring  = re.sub(regex, "", feat) 
+        subvariate_columns = [column for column in dfFiltered.columns if substring in column]
+        subvariate_columns = subvariate_columns + dependentCols
+        filtered_df = dfFiltered.loc[:, subvariate_columns]
+        binsNeeded = numericBins | quantileBins
+        if feat in binsNeeded.keys():
+            if feat in numericBins.keys():
+                filtered_df['binned'] = pd.cut(filtered_df[feat], bins=numericBins[feat], labels=False)
+            elif feat in quantileBins.keys():
+                filtered_df['binned'] = pd.qcut(filtered_df[feat], q=quantileBins[feat], labels=False)
+            grouped_df = pd.get_dummies(filtered_df['binned'], prefix=f'{feat}_bin', dtype=int)
+            filtered_df = pd.concat([filtered_df, grouped_df], axis=1)
+            filtered_df = filtered_df.drop([feat], axis=1)
+            filtered_df = filtered_df.drop(['binned'], axis=1)
+            findNull(filtered_df)
+            # Add the new binned columns into the main df as well
+            newColumns = [x for x in filtered_df.columns if x not in dfFiltered.columns]
+            newFrame = filtered_df[newColumns]
+            dfFiltered = pd.concat([dfFiltered, newFrame], axis=1)
+        subRegressions.append(filtered_df)
+
+    # Turn hazards for a fittex cox model into percentage of importance for each covariate
+    def percentageImportance(hazardRatios): 
+        totalHazardMagnitude = np.sum(hazardRatios.values)
+        covariateInfo = {}
+        for key in hazardRatios.keys():
+            covariateInfo[key] = {
+                'Hazard Ratio': hazardRatios[key],
+                'Percentage Importance': (hazardRatios[key] / totalHazardMagnitude) * 100
+            }
+        return covariateInfo
+    
+    dfAll = dfFiltered.copy()
+    dfFiltered = dfFiltered.loc[:, dfFiltered.columns.isin(importantFeatures)]
     # plt.hist(dfFiltered['time_to_event'], bins = 50)
     # plt.show()
     kmf = KaplanMeierFitter()
     cph = CoxPHFitter(penalizer=0.001)
-    cph.fit(dfFiltered,"time_to_event", event_col="cardiovascular_event", strata=['claudication_pain', 'family_premature_cad_hist'])
+    cph.fit(dfFiltered,"time_to_event", event_col="cardiovascular_event")
     cph.print_summary()
+    # Calculate the importance of each main covariate in the main cox regression
+    mainCovariateInfo = percentageImportance(cph.hazard_ratios_)
     # plt.figure(10)
     # cph.plot()
-    cph.plot_partial_effects_on_outcome(covariates = 'age_first_surgery', values = [0, 1, 5, 10, 20, 30, 50], cmap = 'coolwarm')
-    # cph.check_assumptions(dfFiltered, p_value_threshold = 0.05)
+    # cph.plot_partial_effects_on_outcome(covariates = 'age_first_surgery', values = [0, 1, 5, 10, 20, 30, 50], cmap = 'coolwarm')
+    cph.check_assumptions(dfFiltered, p_value_threshold = 0.05)
+
+    # Run cox regression within the groups
+    subCovariateInfo = []
+    for frame in subRegressions:
+        cph.fit(frame,"time_to_event", event_col="cardiovascular_event")
+        cph.print_summary()
+        # Get the relative importance values for each nested covariate and push into list
+        covariateInfo = percentageImportance(cph.hazard_ratios_)
+        subCovariateInfo.append(covariateInfo)
+    
+    subCovariateInfo = [x for x in subCovariateInfo if x != {}]
+
+
+    # dictionary where each key is column name and it holds a tuple of percentage importance, and risk points
+    finalGrading = {}
+        #yuck
+    for mainVariate in mainCovariateInfo:
+        for value in subCovariateInfo:
+            for subvariate in value:
+                # Check if the variates or the same, or the main variate string is a substring
+                if mainVariate == subvariate or mainVariate in subvariate:
+                    ##do the multiplication schtuff 
+                    scaledPercentage = (value[subvariate]['Percentage Importance'] / 100) * (mainCovariateInfo[mainVariate]['Percentage Importance'] / 100)
+                    pointScaleFactor = 100
+                    scaledPoints = scaledPercentage * pointScaleFactor
+                    print('found a match of', mainVariate, ' and ', subvariate, ' scaled this became ', scaledPoints)
+                    finalGrading[subvariate] = (scaledPercentage, scaledPoints)
+    print(finalGrading)
+
+    def calculateTotalPoints(row):
+        pointTotal = 0
+        for riskFactor in finalGrading:
+            if row[riskFactor]:
+                pointTotal = pointTotal + finalGrading[riskFactor][1]
+        return pointTotal
+            
+
+    def generateRiskGroup(frame):
+        frame['risk_points'] = frame.apply(calculateTotalPoints, axis = 1)
+        binLabels = ['Low Risk', 'Medium Risk', 'Medium Risk', 'Medium Risk', 'Medium Risk', 'Medium Risk', 'High Risk']
+        frame['risk_group'] = np.array(binLabels)[pd.qcut(frame['risk_points'], q=7, labels=False)]
+        # dfAll['risk_group'] = pd.qcut(dfAll['risk_points'], q=6, labels=binLabels)
+        return frame
+
+    dfAll = generateRiskGroup(dfAll)
+
+    groupedInfo = [
+        ("risk_group == 'Low Risk'", "Low Risk"),
+        # ("risk_group == 'Medium Risk'", "Medium Risk"),
+        ("risk_group == 'High Risk'", "High Risk"),
+    ]
+    Kaplan(dfAll, "time_to_event", "cardiovascular_event", groupedInfo, (14,15))
+
+    log_rank = pairwise_logrank_test(dfAll['time_to_event'], dfAll['risk_group'], dfAll['cardiovascular_event'])
+
+    print("Log-Rank Test:")
+    print(log_rank.summary)
+
+    # Set the number of bootstrap iterations
+    num_bootstrap = 1000
+        # Initialize arrays to store bootstrapped p-values
+    bootstrap_p_values = []
+    print("Performing Bootstrapping with 1000 samples, this may take some time...")
+    # Perform bootstrapping
+    for i in range(num_bootstrap):
+        # Generate bootstrap sample
+        bootstrap_sample = dfAll.sample(len(dfAll), replace=True)
+        # Apply risk point system to bootstrap sample and categorize into high and low-risk
+        bootstrap_sample = generateRiskGroup(bootstrap_sample)
+        # Perform survival analysis (log-rank test) on bootstrap sample
+        log_rank = pairwise_logrank_test(bootstrap_sample['time_to_event'], bootstrap_sample['risk_group'], bootstrap_sample['cardiovascular_event'])
+        # Store p-value nested array from bootstrapped sample
+        bootstrap_p_values.append(log_rank.p_value)
+
+    # Calculate summary statistics from the bootstrapped p-values
+    for i in range(len(bootstrap_p_values[0])):
+        elements = [sub_array[i] for sub_array in bootstrap_p_values]
+        median_p_value = np.median(elements)
+        confidence_interval = np.percentile(elements, [2.5, 97.5])
+        
+        # Count the number of p-values below 0.05
+        count_below_threshold = sum(p_value < 0.05 for p_value in elements)
+        # Calculate the proportion of p-values below 0.05
+        proportion_below_threshold = count_below_threshold / len(elements)
+
+        # Calculate the confidence interval for the proportion
+        conf_interval = proportion_confint(proportion_below_threshold, len(elements), alpha=0.05, method='normal')
+        # Check if the confidence interval is entirely below 0.05
+        is_significant = conf_interval[1] < 0.05
+
+        # Print results
+        print(f"Median p-value for pairwise {i}:", median_p_value)
+        print(f"95% Confidence Interval for pairwise {i}:", confidence_interval)
+        print(f"The overall significance of this pair was: {is_significant}")

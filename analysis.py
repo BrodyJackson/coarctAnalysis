@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, date
 import scipy.stats as stats
+import warnings
+warnings.filterwarnings('ignore')
 
 from dataGlossary import renameColumns
 from dataGlossary import cardiovascularEvents as cardioEvent
@@ -12,6 +14,7 @@ from dataGlossary import cathOperations
 from dataGlossary import hiddenAttributes
 from dataGlossary import needsAZeroValue
 from dataGlossary import majorCardioEvent
+from dataGlossary import operationDateColumns
 from descriptiveStats import createTableOne
 
 from survivalAnalysis import generateSurvivalAnalysis
@@ -81,6 +84,14 @@ def hadMajorEvent(row):
     return 0
 
 df['major_cardiovascular_event'] = df.apply(hadMajorEvent, axis = 1)
+
+# Create resistive hypertension column
+def resistiveHypertension(row):
+    if row['total_num_antihypertensives'] >= 3 and row['systemic_hypertension'] > 0:
+        return 1
+    return 0
+    
+df['resistive_hypertension'] = df.apply(resistiveHypertension, axis = 1)
  
 # Calculate an age value based on an input date in format YYYY-MM-DD
 def determineAge(born):
@@ -115,6 +126,18 @@ operationDetails = {
 # Add a new column to each row to determine patients age
 df['age'] = df['patient_birth_date'].apply(determineAge)
 
+#Determine if they had a sugery of catheter first (make two columns of yes/no)
+df['first_op_type'] = 0
+for index, row in df.iterrows():
+    earliestOpDate = datetime.today().date()
+    for column in operationDateColumns:
+        if pd.isna(row[column]):
+            continue
+        date = datetime.strptime(str(row[column]), '%Y-%m-%d %H:%M').date()
+        if  date < earliestOpDate:
+            earliestOpDate = date
+            df.loc[index, 'first_op_type'] = 1 if column in surgeryOperations else 2
+    
 operations = cathOperations.union(surgeryOperations)
 def createOperationBool(row, original): 
     if (pd.isnull(row[original])):
@@ -132,16 +155,6 @@ for x in fillNaMean:
     df[x].fillna((df[x].mean()), inplace=True)
 
 df['smoking_status'] = df['smoking_status'].replace(2,1)
-
-# Test all columns for normality
-# for col in list(df.select_dtypes('number')): 
-#     print(col)
-#     a,b = stats.shapiro(df[col])
-#     print(a,b)
-#     if b < 0.05: 
-#         print('not normal')
-#     else: 
-#         print('normal')
 
 # Create descriptive statistics table
 def createSummaryTable(table, renameColumns):
@@ -184,9 +197,6 @@ def filterNoEffect(table, tableName):
     
     onlyEffects.set_index(['level_0', 'level_1'], inplace=True)
     return onlyEffects
-
-
-# print(summaryTableDf.columns.levels[1])
 
 survivalCurves = generateSurvivalAnalysis(df)
 tablesToCreate = ['demographics', 'surgeries', 'outcomes']
