@@ -33,7 +33,15 @@ currentClinicalFeatures = [
     'presence_of_collaterals',
     'ecg_sinus_rhythm',
     'ecg_afib',
-    'cardiopulmonary_exercise_test_performed', 
+    'cardiopulmonary_exercise_test_performed',
+]
+
+imagingValues = [
+    'diameter_at_widest_ascending_aorta_max',
+    'diameter_at_coarct_site_max',
+    'diameter_at_post_stenotic_site_max',
+    'diameter_at_diaphragm_max',
+    'imaging_coarct_ratio'
 ]
 
 currentMedications = [

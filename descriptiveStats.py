@@ -74,6 +74,11 @@ allColumnsDemographics = [
     'statins',
     'diuretics',
     'total_num_antihypertensives',
+    'diameter_at_widest_ascending_aorta_max',
+    'diameter_at_coarct_site_max',
+    'diameter_at_post_stenotic_site_max',
+    'diameter_at_diaphragm_max',
+    'imaging_coarct_ratio'
 ]
 
 categoricalValuesSurgeries = [
@@ -255,7 +260,7 @@ def createTableOne(df, type):
             a,b = stats.shapiro(df[col])
             if b < 0.05: 
                 nonNormal.append(col)
-
+                
     myTable = TableOne(df, columns=allColumns, categorical=categoricalValues, groupby=groupby, missing=False, nonnormal=nonNormal, pval=pvalue)
     return myTable
     

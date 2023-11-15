@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, date
 import scipy.stats as stats
+import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -19,7 +20,7 @@ from descriptiveStats import createTableOne
 
 from survivalAnalysis import generateSurvivalAnalysis
 
-data = 'coarctData.csv'
+data = 'coarctData_imaging.csv'
 
 df = pd.read_csv(data)
 # Getting rid of all the columns that just mark an instrument as complete
@@ -28,7 +29,6 @@ df.drop(list(df.filter(regex = '_complete$')), axis = 1, inplace = True)
 df.rename(columns=renameColumns, inplace=True)
 # find the completely empty columns
 empty_cols = [col for col in df.columns if df[col].isnull().all()]
-# print(empty_cols)
 
 df['number_of_surgeries'] = df[list(surgeryOperations)].count(axis=1)
 df['number_of_cath'] = df[list(cathOperations)].count(axis=1)
@@ -92,16 +92,25 @@ def resistiveHypertension(row):
     return 0
     
 df['resistive_hypertension'] = df.apply(resistiveHypertension, axis = 1)
- 
+
+# Create coarctation ratio from imaging column
+df['imaging_coarct_ratio'] = df.apply(lambda row: row['diameter_at_coarct_site_max']/row['diameter_at_diaphragm_max'], axis=1)
+
+print('counts for imaging')
+print(df['diameter_at_coarct_site_max'].count())
+print(df['diameter_at_widest_ascending_aorta_max'].count())
+print(df['diameter_at_post_stenotic_site_max'].count())
+print(df['diameter_at_diaphragm_max'].count())
+
 # Calculate an age value based on an input date in format YYYY-MM-DD
 def determineAge(born):
     born = datetime.strptime(born, "%Y-%m-%d").date()
     today = date.today()
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
-# I need to the total number of sugical repairs and the total number of catheter repairs
-# Then I need the total number of each individual type of operation
-# Then I need the number of operations per patient
+# Total number of sugical repairs and the total number of catheter repairs
+# The total number of each individual type of operation
+# The number of operations per patient
 def determineSpecificOperationCounts(keyword, operationList):
     columnList = [col for col in operationList if keyword in operationList]
 
@@ -210,6 +219,7 @@ for x in tablesToCreate:
         f.write(table.tabulate(headers=tableHeaders, tablefmt="html"))
     print(table.tabulate(headers=tableHeaders, tablefmt="github"))
 
+plt.show()
 # print(summaryTableDf.to_string())
 # fileName = 'summaryTable.html'
 # summaryTableDf.to_html(fileName)

@@ -1,12 +1,17 @@
 import seaborn as sns
 sns.set(style="whitegrid")
 import matplotlib.pyplot as plt
-from dataGlossary import demographicFeatures, vascularRisk, currentClinicalFeatures
+from dataGlossary import demographicFeatures, vascularRisk, currentClinicalFeatures, imagingValues
 from sklearn.model_selection import train_test_split
 from helpers import createDummies
 from sklearn.preprocessing import RobustScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.impute import KNNImputer
+
+from sklearn.impute import SimpleImputer
+
 import pandas as pd
 import numpy as np
 
@@ -34,7 +39,7 @@ dontInclude = [
 def findFeatureImportance(df): 
     y = df['cardiovascular_event']
     X = df.drop(['cardiovascular_event'], axis=1)
-    testColumns = demographicFeatures + vascularRisk + currentClinicalFeatures
+    testColumns = demographicFeatures + vascularRisk + currentClinicalFeatures + imagingValues
     testColumns = testColumns + ['age_first_surgery', 'first_op_type', 'had_one_op_type', 'only_catheters', 'only_surgeries']
     for val in dontInclude:
         testColumns.remove(val)
@@ -48,8 +53,25 @@ def findFeatureImportance(df):
     X.drop(list(X.filter(regex = '_([1-9][0-9]*)$')), axis = 1, inplace = True)
     # print(X.loc[:, X.isna().any()].to_string())
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
+    #Commented out to see if I can just do before I pass in
 
+    imp = SimpleImputer(strategy='mean')
+    for val in imagingValues:
+        X[val] = imp.fit_transform(X[val].values.reshape(-1, 1) )
+
+    # scaler = MinMaxScaler()
+    # print(X.head())
+    # print(X.isna().sum())
+    # X = pd.DataFrame(scaler.fit_transform(X), columns = X.columns)
+    # imputer = KNNImputer(n_neighbors=5)
+    # X = pd.DataFrame(imputer.fit_transform(X),columns = X.columns)
+    # X = pd.DataFrame(scaler.inverse_transform(X), columns = X.columns)
+    # print(X.head())
+    # print(X.isna().sum())
+
+    
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
     cols = X_train.columns
     scaler = RobustScaler()
     X_train = scaler.fit_transform(X_train)
@@ -67,7 +89,9 @@ def findFeatureImportance(df):
     print('Model accuracy score with 600 decision-trees : {0:0.4f}'. format(accuracy_score(y_test, y_pred)))
 
     feature_scores = pd.Series(rfc.feature_importances_, index=X_train.columns).sort_values(ascending=False)
-    feature_scores.nlargest(100).plot(kind='barh')
+    # feature_scores.nlargest(100).plot(kind='barh').invert_yaxis()
+    # plt.show()
+    # plt.savefig("test.svg", format="svg")
     print(feature_scores)
 
     # Get variable importances
@@ -100,5 +124,5 @@ def findFeatureImportance(df):
     # ax.set_ylabel("Features")
     # plt.show()
 
-    # Return the features with greatest cumulative importance
-    return(use_in_cox)
+    # Return the features with greatest cumulative importance and the dataset
+    return(use_in_cox, X)
